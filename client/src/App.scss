@@ -3,6 +3,7 @@ body {
   font-weight: 300;
   background-color: #e2e8f0;
   padding: 40px;
+  position: relative;
 }
 
 label {
@@ -83,4 +84,53 @@ input {
 .transfer {
   display: flex;
   flex-direction: column;
+}
+
+.modal{
+  display: flex;
+  border: 1px solid #319795;
+  background-color: #fff;
+  flex-direction: column;
+  height: 50%;
+  align-items: center;
+  width: 50%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  .privKeyInput{
+    width: 80%;
+    margin-top: 3rem;
+    border: 1px solid #319795;
+  }
+  .privKeyInput:focus{
+    outline-color: #319795;
+  }
+  .cross{
+    position: absolute;
+    right: 1em;
+    top: 0.5em;
+    background-color: #319795;
+    color: white;
+    border: 1px solid #319795;
+    border-radius: 2px;
+  }
+  .sign{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 50%;
+    background-color: #319795;
+    color: white;
+    padding: 0.5em;
+    margin: 1em 0;
+    font-size: medium;
+    font-weight: 500;
+    border: none;
+    border-radius: 99px;
+  }
+  p{
+    margin: 1em 1em;
+    color: #319795;
+  }
 }

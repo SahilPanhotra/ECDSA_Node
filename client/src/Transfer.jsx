@@ -1,15 +1,22 @@
 import { useState } from "react";
 import server from "./server";
+import Modal from "./components/Modal";
+import { hashMessage } from "./utils/helperfunctions";
+import * as secp from "ethereum-cryptography/secp256k1"
 
 function Transfer({ address, setBalance }) {
   const [sendAmount, setSendAmount] = useState("");
   const [recipient, setRecipient] = useState("");
+  const [isOpen,setIsOpen] = useState(false);
+  const  [privKey,setPrivKey] = useState("");
 
   const setValue = (setter) => (evt) => setter(evt.target.value);
 
-  async function transfer(evt) {
+  async function SignAndTransfer(evt) {
     evt.preventDefault();
-
+    let msg=`Transfer ${sendAmount} from ${address} to ${recipient}`
+    const msghash = hashMessage(msg);
+    const signatureM = await secp.sign(msghash, privKey, { recovered: true });
     try {
       const {
         data: { balance },
@@ -17,15 +24,19 @@ function Transfer({ address, setBalance }) {
         sender: address,
         amount: parseInt(sendAmount),
         recipient,
+        signatureM,
       });
       setBalance(balance);
     } catch (ex) {
       alert(ex.response.data.message);
     }
   }
+  const openModal = () => {
+    setIsOpen(true);
+  }
 
   return (
-    <form className="container transfer" onSubmit={transfer}>
+    <form className="container transfer" onSubmit={SignAndTransfer}>
       <h1>Send Transaction</h1>
 
       <label>
@@ -46,7 +57,9 @@ function Transfer({ address, setBalance }) {
         ></input>
       </label>
 
-      <input type="submit" className="button" value="Transfer" />
+      <input type="button" onClick={openModal} className="button" value="Transfer" />
+      {isOpen&&<Modal setPrivKey={setPrivKey} setIsOpen={setIsOpen}/>}
+
     </form>
   );
 }
