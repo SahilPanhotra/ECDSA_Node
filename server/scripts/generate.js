@@ -10,6 +10,6 @@ const publicKey = secp.secp256k1.getPublicKey(privateKey);
 
 console.log("public key:" + toHex(publicKey));
 
-const address = keccak256(publicKey).slice(-20);
+const address = keccak256(publicKey.slice(1)).slice(-20);
 
 console.log("Public address:" + `0x${toHex(address)}`);
