@@ -2,6 +2,9 @@ const express = require("express");
 const app = express();
 const cors = require("cors");
 const port = 3042;
+const secp = require("ethereum-cryptography/secp256k1");
+const { toHex, hexToBytes } = require("ethereum-cryptography/utils");
+const { keccak256 } = require("ethereum-cryptography/keccak");
 
 app.use(cors());
 app.use(express.json());
@@ -18,12 +21,24 @@ app.get("/balance/:address", (req, res) => {
   res.send({ balance });
 });
 
-app.post("/send", (req, res) => {
-  const { sender, recipient, amount } = req.body;
+app.post("/send", async(req, res) => {
+  const { sender, recipient, amount, signature, msghash } = req.body;
 
   setInitialBalance(sender);
   setInitialBalance(recipient);
+  const { r, s , recovery } = signature;
+  const signatureInstance = new secp.secp256k1.Signature(BigInt(r), BigInt(s), recovery);
+  const recoverPublicKey = signatureInstance.recoverPublicKey(msghash);
 
+  const publicKey = recoverPublicKey.toHex(true);
+
+  const address = toHex(keccak256(hexToBytes(publicKey.slice(2))).slice(-20));
+  const publicAddress=`0x${address}`
+  
+  if( publicAddress!== sender) {
+    res.status(400).send({ message: "Invalid signature! Please Use Private Key of Same address" });
+    return;
+  }
   if (balances[sender] < amount) {
     res.status(400).send({ message: "Not enough funds!" });
   } else {
@@ -37,6 +52,9 @@ app.listen(port, () => {
   console.log(`Listening on port ${port}!`);
 });
 
+async function recoverKey(msgHash, signature, recoveryBit) {
+    return secp.recoverPublicKey(msgHash, signature, recoveryBit);   
+}
 function setInitialBalance(address) {
   if (!balances[address]) {
     balances[address] = 0;

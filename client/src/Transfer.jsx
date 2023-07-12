@@ -2,21 +2,31 @@ import { useState } from "react";
 import server from "./server";
 import Modal from "./components/Modal";
 import { hashMessage } from "./utils/helperfunctions";
-import * as secp from "ethereum-cryptography/secp256k1"
+import { secp256k1 } from "ethereum-cryptography/secp256k1";
+import { hexToBytes } from "ethereum-cryptography/utils";
+import { toast } from "react-toastify";
 
 function Transfer({ address, setBalance }) {
   const [sendAmount, setSendAmount] = useState("");
   const [recipient, setRecipient] = useState("");
-  const [isOpen,setIsOpen] = useState(false);
-  const  [privKey,setPrivKey] = useState("");
+  const [isOpen, setIsOpen] = useState(false);
+  const [privKey, setPrivKey] = useState("");
 
   const setValue = (setter) => (evt) => setter(evt.target.value);
 
   async function SignAndTransfer(evt) {
     evt.preventDefault();
-    let msg=`Transfer ${sendAmount} from ${address} to ${recipient}`
+    let msg = `Transfer ${sendAmount} from ${address} to ${recipient}`;
     const msghash = hashMessage(msg);
-    const signatureM = await secp.sign(msghash, privKey, { recovered: true });
+    // Convert the hexadecimal representation of the private key received from the user to binary
+    const privateKeyBinary = hexToBytes(privKey);
+
+    const signatureM = await secp256k1.sign(msghash, privateKeyBinary);
+    const signatureSerialized = {
+      r: signatureM.r.toString(),
+      s: signatureM.s.toString(),
+      recovery: signatureM.recovery,
+    };
     try {
       const {
         data: { balance },
@@ -24,16 +34,31 @@ function Transfer({ address, setBalance }) {
         sender: address,
         amount: parseInt(sendAmount),
         recipient,
-        signatureM,
+        signature: signatureSerialized,
+        msghash,
       });
       setBalance(balance);
+      toast.success(
+        `Transaction executed successfully New Balance:${balance}`,
+        {
+          position: toast.POSITION.TOP_RIGHT,
+          theme: "light",
+          icon: "🚀",
+          autoClose: 7000,
+        }
+      );
+      setIsOpen(false);
     } catch (ex) {
-      alert(ex.response.data.message);
+      toast.error(`Uhh uh 😕${ex.response.data.message}`, {
+        position: toast.POSITION.TOP_RIGHT,
+        theme: "light",
+        autoClose: 8000,
+      });
     }
   }
   const openModal = () => {
     setIsOpen(true);
-  }
+  };
 
   return (
     <form className="container transfer" onSubmit={SignAndTransfer}>
@@ -57,9 +82,13 @@ function Transfer({ address, setBalance }) {
         ></input>
       </label>
 
-      <input type="button" onClick={openModal} className="button" value="Transfer" />
-      {isOpen&&<Modal setPrivKey={setPrivKey} setIsOpen={setIsOpen}/>}
-
+      <input
+        type="button"
+        onClick={openModal}
+        className="button"
+        value="Transfer"
+      />
+      {isOpen && <Modal setPrivKey={setPrivKey} setIsOpen={setIsOpen} />}
     </form>
   );
 }

@@ -2,6 +2,8 @@ import Wallet from "./Wallet";
 import Transfer from "./Transfer";
 import "./App.scss";
 import { useState } from "react";
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 function App() {
   const [balance, setBalance] = useState(0);
@@ -9,6 +11,7 @@ function App() {
 
   return (
     <div className="app">
+      <ToastContainer autoClose={5000} limit={3}/>
       <Wallet
         balance={balance}
         setBalance={setBalance}
